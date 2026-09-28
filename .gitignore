@@ -1,5 +1,30 @@
-cmake-build-debug
-build
-.DS_Store
-.idea
+# Build output (CLion / CMake)
+build/
+cmake-build-*/
+*.uf2
+*.elf
+*.bin
+*.hex
+*.map
+*.dis
 
+# CLion: personal state is ignored; shared run configurations may be committed later
+.idea/*
+!.idea/runConfigurations/
+
+# macOS / editors
+.DS_Store
+._*
+Thumbs.db
+*.swp
+.vscode/
+
+# Local copies of course examples: keep them outside src/ (every .cpp there is compiled)
+Uart/
+Uart_extracted/
+*.zip
+
+# Credentials: never commit (ThingSpeak keys, Wi-Fi passwords)
+secrets.h
+*.secret
+.env

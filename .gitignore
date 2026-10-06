@@ -28,3 +28,4 @@ Uart_extracted/
 secrets.h
 *.secret
 .env
+secrets.cmake

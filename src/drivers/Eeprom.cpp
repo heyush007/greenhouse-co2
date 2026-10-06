@@ -9,13 +9,11 @@ namespace {
 i2c_inst_t *const bus = i2c0;
 constexpr uint32_t I2C_TIMEOUT_US = 20000;
 
-// Before the scheduler starts vTaskDelay must not be called, so fall back to busy wait.
 void wait_ms(uint32_t ms) {
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) vTaskDelay(pdMS_TO_TICKS(ms));
     else busy_wait_ms(ms);
 }
 
-// A 24Cxx acknowledges its address again once the internal write cycle has finished.
 bool wait_write_cycle() {
     uint8_t dummy;
     for (int i = 0; i < 20; ++i) {
@@ -24,7 +22,7 @@ bool wait_write_cycle() {
     }
     return false;
 }
-} // namespace
+}
 
 namespace eeprom {
 
@@ -32,7 +30,7 @@ void init() {
     i2c_init(bus, 100 * 1000);
     gpio_set_function(cfg::I2C0_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(cfg::I2C0_SCL_PIN, GPIO_FUNC_I2C);
-    gpio_pull_up(cfg::I2C0_SDA_PIN);   // board has 4.7k pull-ups; internal ones do no harm
+    gpio_pull_up(cfg::I2C0_SDA_PIN);
     gpio_pull_up(cfg::I2C0_SCL_PIN);
 }
 
@@ -45,7 +43,7 @@ bool read(uint16_t addr, uint8_t *data, size_t len) {
 
 bool write(uint16_t addr, const uint8_t *data, size_t len) {
     while (len > 0) {
-        // never cross a page boundary in one write, the chip would wrap around
+
         const size_t room  = cfg::EEPROM_PAGE_SIZE - (addr % cfg::EEPROM_PAGE_SIZE);
         const size_t chunk = len < room ? len : room;
         uint8_t buf[2 + cfg::EEPROM_PAGE_SIZE];
@@ -62,4 +60,4 @@ bool write(uint16_t addr, const uint8_t *data, size_t len) {
     return true;
 }
 
-} // namespace eeprom
+}

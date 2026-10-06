@@ -7,21 +7,26 @@ QueueHandle_t systemStatus  = nullptr;
 QueueHandle_t setpointQueue = nullptr;
 QueueHandle_t saveQueue     = nullptr;
 QueueHandle_t inputQueue    = nullptr;
+QueueHandle_t netStatus     = nullptr;
 
 bool create_app_queues() {
-    sensorData    = xQueueCreate(1,  sizeof(SensorData));      // mailbox: xQueueOverwrite / xQueuePeek
-    systemStatus  = xQueueCreate(1,  sizeof(SystemStatus));    // mailbox: xQueueOverwrite / xQueuePeek
+    // Length-1 queues act as mailboxes that hold only the newest value.
+    sensorData    = xQueueCreate(1,  sizeof(SensorData));
+    systemStatus  = xQueueCreate(1,  sizeof(SystemStatus));
     fanCmdQueue   = xQueueCreate(5,  sizeof(FanCommand));
     setpointQueue = xQueueCreate(5,  sizeof(SetpointRequest));
     saveQueue     = xQueueCreate(5,  sizeof(SaveRequest));
     inputQueue    = xQueueCreate(16, sizeof(InputEvent));
+    netStatus     = xQueueCreate(1,  sizeof(NetStatus));
 
-    vQueueAddToRegistry(sensorData,    "sensorData");          // names show up in the CLion RTOS view
+    // Names show up in the CLion RTOS view.
+    vQueueAddToRegistry(sensorData,    "sensorData");
     vQueueAddToRegistry(systemStatus,  "systemStatus");
     vQueueAddToRegistry(fanCmdQueue,   "fanCmdQueue");
     vQueueAddToRegistry(setpointQueue, "setpointQueue");
     vQueueAddToRegistry(saveQueue,     "saveQueue");
     vQueueAddToRegistry(inputQueue,    "inputQueue");
+    vQueueAddToRegistry(netStatus,     "netStatus");
 
-    return sensorData && systemStatus && fanCmdQueue && setpointQueue && saveQueue && inputQueue;
+    return sensorData && systemStatus && fanCmdQueue && setpointQueue && saveQueue && inputQueue && netStatus;
 }

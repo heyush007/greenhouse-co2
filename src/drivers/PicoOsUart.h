@@ -1,7 +1,3 @@
-//
-// Created by Keijo Länsikunnas on 30.8.2024.
-//
-
 #ifndef RP2040_FREERTOS_IRQ_PICOOSUART_H
 #define RP2040_FREERTOS_IRQ_PICOOSUART_H
 
@@ -16,7 +12,7 @@ class PicoOsUart {
     friend void pico_uart1_handler(void);
 public:
     PicoOsUart(int uart_nr, int tx_pin, int rx_pin, int speed, int stop = 1, int tx_size = 256, int rx_size = 256);
-    PicoOsUart(const PicoOsUart &) = delete; // prevent copying because each instance is associated with a HW peripheral
+    PicoOsUart(const PicoOsUart &) = delete;
     int read(uint8_t *buffer, int size, int timeout = 500);
     int write(const uint8_t *buffer, int size);
     int send(const char *str);
@@ -34,5 +30,4 @@ private:
     int speed;
 };
 
-
-#endif //RP2040_FREERTOS_IRQ_PICOOSUART_H
+#endif

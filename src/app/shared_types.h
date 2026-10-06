@@ -1,67 +1,74 @@
-// The contract between tasks. Change this file only through a merge request
-// that everyone has seen: every task depends on it.
+// Shared message types the tasks pass through the queues.
 #pragma once
 #include <cstdint>
 #include "FreeRTOS.h"
 #include "queue.h"
 
-// Modbus task -> Control task (mailbox: sensorData)
+// Latest sensor readings (Modbus task -> Control task).
 struct SensorData {
     int16_t    co2_ppm;
     float      rh_pct;
     float      temp_c;
-    uint16_t   fan_pulses;     // pulses since last read (MIO counter self-clears)
-    bool       fan_running;    // false after two consecutive zero reads
-    bool       co2_ok;         // last GMP252 read succeeded
-    bool       rh_t_ok;        // last HMP60 read succeeded
-    bool       mio_ok;         // last MIO access succeeded
-    TickType_t timestamp;      // xTaskGetTickCount() when the data was read
+    uint16_t   fan_pulses;     // fan rotation pulses since the last read
+    bool       fan_running;    // false after two zero reads in a row
+    bool       co2_ok;         // last CO2 read worked
+    bool       rh_t_ok;        // last RH/T read worked
+    bool       mio_ok;         // last fan I/O read worked
+    TickType_t timestamp;      // when these values were read
 };
 
-// Control task -> Modbus task (queue: fanCmdQueue)
+// Fan speed request (Control task -> Modbus task).
 struct FanCommand {
-    uint8_t percent;           // 0..100
+    uint8_t percent;
 };
 
-// Control task -> UI, Network (mailbox: systemStatus)
+// Everything the UI and network show (Control task -> UI, Network).
 struct SystemStatus {
     SensorData sensors;
     uint16_t   setpoint_ppm;
     uint8_t    fan_percent;
     bool       valve_open;
-    bool       venting;        // CO2 went above the 2000 ppm safety limit
+    bool       venting;        // true while venting above the safety limit
 };
 
-// UI, Network -> Control (queue: setpointQueue)
+// A new CO2 target (UI, Network -> Control task).
 struct SetpointRequest {
     uint16_t ppm;
 };
 
-// GPIO ISR -> UI task (queue: inputQueue)
+// One button or encoder event (input ISR -> UI task).
 enum class InputEvent : uint8_t {
     RotCW, RotCCW, RotPress, Sw0, Sw1, Sw2
 };
 
-// UI, Network -> Storage task (queue: saveQueue)
-// Senders describe one change; the Storage task owns the full Settings copy and merges it.
-// That keeps Settings out of shared memory, so no mutex is needed.
-enum class SaveField : uint8_t { Setpoint, WifiSsid, WifiPassword, ThingSpeakKey, FactoryReset };
+// Which setting to change (UI, Network, Console -> Storage task).
+enum class SaveField : uint8_t { Setpoint, WifiSsid, WifiPassword, ThingSpeakKey,
+                                 TalkbackKey, TalkbackId, FactoryReset };
+// One change request for the Storage task.
 struct SaveRequest {
     SaveField field;
-    uint16_t  ppm;             // used with Setpoint
-    char      text[65];        // used with the string fields
+    uint16_t  ppm;             // used for Setpoint
+    char      text[65];        // used for the string settings
 };
 
-// What lives in EEPROM (owned by the Storage task after boot)
+// Live network status for the UI's WiFi screen (Network -> UI).
+struct NetStatus {
+    bool connected;
+    char ip[16];
+};
+
+// Everything kept in EEPROM.
 struct Settings {
-    uint32_t magic;            // SETTINGS_MAGIC when valid
+    uint32_t magic;            // marks a valid saved block
     uint16_t version;
     uint16_t setpoint_ppm;
     char     wifi_ssid[33];
     char     wifi_password[65];
     char     thingspeak_api_key[17];
-    uint32_t crc;              // CRC32 over everything above
+    char     thingspeak_talkback_key[17];
+    char     thingspeak_talkback_id[12];
+    uint32_t crc;              // checksum over everything above
 };
 
-constexpr uint32_t SETTINGS_MAGIC   = 0x47484331; // "GHC1"
-constexpr uint16_t SETTINGS_VERSION = 1;
+constexpr uint32_t SETTINGS_MAGIC   = 0x47484331;
+constexpr uint16_t SETTINGS_VERSION = 2;
